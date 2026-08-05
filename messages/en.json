@@ -1,0 +1,126 @@
+{
+  "Metadata": {
+    "title": "Asesnol | Smart Automated Trading",
+    "description": "Advanced automated trading platform with referral system and flexible profit sharing"
+  },
+  "Nav": {
+    "home": "Home",
+    "performance": "Performance",
+    "howItWorks": "How it Works",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "login": "Login",
+    "register": "Sign Up",
+    "dashboard": "Dashboard",
+    "chat": "AI Chat",
+    "admin": "Admin"
+  },
+  "Hero": {
+    "badge": "Demo Results • نتائج تجريبية",
+    "title": "Smart Automated Trading with",
+    "titleHighlight": "Asesnol",
+    "subtitle": "MetaTrader 5 automated trading bot with a flexible profit-sharing system based on referrals. Start at 50% and increase your share up to 100%.",
+    "cta": "Get Started",
+    "ctaSecondary": "View Demo Performance",
+    "trust": "Demo results only at this stage"
+  },
+  "Features": {
+    "title": "Why Asesnol?",
+    "item1Title": "24/7 Automated Trading",
+    "item1Desc": "The bot runs around the clock on MetaTrader 5 without manual intervention.",
+    "item2Title": "Rewarding Referral System",
+    "item2Desc": "Start with 50% of profits, and increase your share by 20% with each successful referral up to 100%.",
+    "item3Title": "Full Transparency",
+    "item3Desc": "Track your balance, profits, and share percentage from a private dashboard.",
+    "item4Title": "Early User Bonus",
+    "item4Desc": "High profit percentage with no sharing for a full month for early users."
+  },
+  "Performance": {
+    "title": "Demo Performance",
+    "subtitle": "The data shown here is experimental for demonstration purposes only and does not represent real results.",
+    "disclaimer": "Warning: Past or demo results do not guarantee future performance. Trading involves high risk and may result in loss of capital.",
+    "totalProfit": "Total Profit (Demo)",
+    "winRate": "Win Rate",
+    "maxDrawdown": "Max Drawdown",
+    "trades": "Number of Trades",
+    "period": "Period"
+  },
+  "ProfitShare": {
+    "title": "Profit Sharing System",
+    "subtitle": "Your share increases with every successful referral (within 30 days)",
+    "level0": "No referrals",
+    "level1": "1 Referral",
+    "level2": "2 Referrals",
+    "level3": "3+ Referrals",
+    "share": "Investor Share",
+    "earlyBird": "Early users: High percentage with no sharing for 30 days"
+  },
+  "Risk": {
+    "title": "Risk Disclaimer",
+    "text": "Trading in financial markets involves high risk and may result in partial or total loss of capital. Asesnol is not investment advice. Demo results do not represent real performance. You must understand the risks before making any deposit."
+  },
+  "Footer": {
+    "rights": "All rights reserved",
+    "risks": "Risks & Disclaimer",
+    "contact": "Contact Us"
+  },
+  "Common": {
+    "demo": "Demo Results",
+    "usd": "USD",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "back": "Back"
+  },
+  "Auth": {
+    "loginTitle": "Login",
+    "registerTitle": "Create Account",
+    "email": "Email",
+    "password": "Password",
+    "name": "Full Name",
+    "referralCode": "Referral Code (optional)",
+    "referralPlaceholder": "e.g. ASN1A2B3C",
+    "loginBtn": "Login",
+    "registerBtn": "Create Account",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "logout": "Logout",
+    "minPassword": "At least 6 characters",
+    "acceptRisks": "I acknowledge that I have read and understood the risks and disclaimer"
+  },
+  "Dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome",
+    "balance": "Current Balance",
+    "totalProfit": "Total Profit",
+    "totalDeposited": "Total Deposited",
+    "profitShare": "Your Profit Share",
+    "referrals": "Referrals",
+    "yourCode": "Your Referral Code",
+    "copyCode": "Copy Code",
+    "copied": "Copied!",
+    "shareLink": "Referral Link",
+    "deposit": "Deposit",
+    "depositAmount": "Deposit Amount (USD)",
+    "minDeposit": "Minimum $50",
+    "requestDeposit": "Request Deposit",
+    "depositPending": "Your request is under review. Balance will be credited after approval.",
+    "depositHistory": "Deposit History",
+    "statusPending": "Pending",
+    "statusApproved": "Approved",
+    "statusRejected": "Rejected",
+    "earlyBirdActive": "Early bird bonus active (100% no sharing)",
+    "earlyBirdExpired": "Early bird period ended",
+    "noDeposits": "No deposits yet",
+    "wallet": "Wallet",
+    "overview": "Overview"
+  },
+  "Chat": {
+    "title": "AI Assistant",
+    "subtitle": "Ask about the bot, referrals, deposits, or risks",
+    "placeholder": "Type your question...",
+    "disclaimer": "Answers are for informational purposes. Trading involves risk."
+  }
+}
