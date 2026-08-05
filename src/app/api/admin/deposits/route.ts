@@ -1,0 +1,54 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { approveDeposit, rejectDeposit, getAllDeposits } from '@/lib/store';
+
+const ADMIN_SECRET = process.env.ADMIN_SECRET || 'asesnol-admin-change-me';
+
+function checkAdmin(req: NextRequest): boolean {
+  const key = req.headers.get('x-admin-key') || req.nextUrl.searchParams.get('key');
+  return key === ADMIN_SECRET;
+}
+
+/** GET: list all deposits (admin) */
+export async function GET(req: NextRequest) {
+  if (!checkAdmin(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const deposits = await getAllDeposits();
+  return NextResponse.json({ deposits });
+}
+
+/** POST: approve or reject a deposit */
+export async function POST(req: NextRequest) {
+  if (!checkAdmin(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  try {
+    const body = await req.json();
+    const { depositId, action } = body;
+
+    if (!depositId) {
+      return NextResponse.json({ error: 'Missing depositId' }, { status: 400 });
+    }
+
+    if (action === 'approve') {
+      const result = await approveDeposit(depositId);
+      if (!result.ok) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    if (action === 'reject') {
+      const result = await rejectDeposit(depositId);
+      if (!result.ok) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    return NextResponse.json({ error: 'Unknown action. Use approve or reject' }, { status: 400 });
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}
