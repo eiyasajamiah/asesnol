@@ -1,4 +1,4 @@
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import type { KVNamespace } from '@cloudflare/workers-types';
 import crypto from 'crypto';
 
 export type User = {
@@ -28,7 +28,7 @@ export type DepositRequest = {
 function getKV() {
   try {
     const { env } = getRequestContext();
-    return (env as any).ASESNOL_KV as KVNamespace;
+    return (env as any).ASESNOL_KV as any;
   } catch {
     return null;
   }
