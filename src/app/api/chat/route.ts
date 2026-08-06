@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ reply, source: 'local-fallback' });
       }
 
-      const data = (await res.json()) as any;
+      const data = await res.json();
       const reply =
         data.choices?.[0]?.message?.content?.trim() ||
         localAnswer(message, locale);
