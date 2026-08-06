@@ -39,7 +39,7 @@ function RegisterForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password, referralCode: referralCode || undefined }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as { error?: string };
       if (!res.ok) {
         setError(data.error || tCommon('error'));
         setLoading(false);

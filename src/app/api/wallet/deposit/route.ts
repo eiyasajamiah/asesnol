@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
+    const body = (await req.json()) as { amount?: number | string };
     const amount = Number(body.amount);
 
     if (!amount || isNaN(amount)) {

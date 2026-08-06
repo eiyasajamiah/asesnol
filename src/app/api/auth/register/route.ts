@@ -4,7 +4,12 @@ import { createSession } from '@/lib/session';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = (await req.json()) as {
+      email?: string;
+      name?: string;
+      password?: string;
+      referralCode?: string;
+    };
     const { email, name, password, referralCode } = body;
 
     if (!email || !name || !password) {

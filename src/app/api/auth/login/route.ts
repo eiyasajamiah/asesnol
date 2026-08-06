@@ -4,7 +4,7 @@ import { createSession } from '@/lib/session';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = (await req.json()) as { email?: string; password?: string };
     const { email, password } = body;
 
     if (!email || !password) {

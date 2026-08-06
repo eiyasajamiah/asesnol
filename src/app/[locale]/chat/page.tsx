@@ -46,7 +46,7 @@ export default function ChatPage() {
         body: JSON.stringify({ message: text, locale, history }),
       });
 
-      const data = await res.json();
+      const data = (await res.json()) as { reply?: string };
       if (!res.ok) {
         setMessages((prev) => [
           ...prev,
@@ -59,7 +59,7 @@ export default function ChatPage() {
           },
         ]);
       } else {
-        setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
+        setMessages((prev) => [...prev, { role: 'assistant', content: data.reply ?? '' }]);
       }
     } catch {
       setMessages((prev) => [

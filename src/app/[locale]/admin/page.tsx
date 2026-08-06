@@ -82,7 +82,7 @@ export default function AdminPage() {
         }
         return;
       }
-      const data = await res.json();
+      const data = (await res.json()) as { deposits?: Deposit[] };
       setDeposits(data.deposits || []);
     } catch {
       setError('Network error');
@@ -104,7 +104,7 @@ export default function AdminPage() {
         }
         return;
       }
-      const data = await res.json();
+      const data = (await res.json()) as { users?: UserStats[] };
       setUsers(data.users || []);
     } catch {
       setError('Network error');
@@ -148,7 +148,7 @@ export default function AdminPage() {
       if (res.ok) {
         await fetchDeposits();
       } else {
-        const data = await res.json();
+        const data = (await res.json()) as { error?: string };
         setError(data.error || 'Action failed');
       }
     } catch {

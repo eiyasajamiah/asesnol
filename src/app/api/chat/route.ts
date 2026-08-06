@@ -10,7 +10,11 @@ type ChatMessage = { role: 'user' | 'assistant' | 'system'; content: string };
  */
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = (await req.json()) as {
+      message?: string;
+      locale?: string;
+      history?: ChatMessage[];
+    };
     const message = (body.message || '').trim();
     const locale = body.locale === 'en' ? 'en' : 'ar';
     const history: ChatMessage[] = Array.isArray(body.history) ? body.history.slice(-10) : [];
@@ -51,7 +55,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ reply, source: 'local-fallback' });
       }
 
-      const data = await res.json();
+      const data = (await res.json()) as {
+        choices?: { message?: { content?: string } }[];
+      };
       const reply =
         data.choices?.[0]?.message?.content?.trim() ||
         localAnswer(message, locale);
