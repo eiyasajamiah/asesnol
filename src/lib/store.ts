@@ -1,4 +1,3 @@
-import type { KVNamespace } from '@cloudflare/workers-types';
 import crypto from 'crypto';
 
 export type User = {
