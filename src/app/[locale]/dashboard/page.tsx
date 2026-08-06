@@ -59,7 +59,7 @@ export default function DashboardPage() {
         router.push('/login');
         return;
       }
-      const data = await res.json();
+      const data = (await res.json()) as any;
       setUser(data.user);
     } catch {
       router.push('/login');
@@ -72,7 +72,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/wallet/deposits');
       if (res.ok) {
-        const data = await res.json();
+        const data = (await res.json()) as any;
         setDeposits(data.deposits || []);
       }
     } catch {}
@@ -99,7 +99,7 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as any;
       if (!res.ok) {
         setError(data.error || 'Error');
         setDepositLoading(false);

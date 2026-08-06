@@ -46,7 +46,7 @@ export default function ChatPage() {
         body: JSON.stringify({ message: text, locale, history }),
       });
 
-      const data = await res.json();
+      const data = (await res.json()) as any;
       if (!res.ok) {
         setMessages((prev) => [
           ...prev,
