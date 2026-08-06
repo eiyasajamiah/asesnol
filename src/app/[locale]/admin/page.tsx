@@ -83,7 +83,7 @@ export default function AdminPage() {
         return;
       }
       const data = await res.json();
-      setDeposits(data.deposits || []);
+      setDeposits((data as any).deposits || []);
     } catch {
       setError('Network error');
     } finally {
