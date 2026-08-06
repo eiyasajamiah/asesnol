@@ -8,3 +8,10 @@ const nextConfig: NextConfig = {
 };
 
 export default withNextIntl(nextConfig);
+
+// Enables Cloudflare bindings (KV, etc.) when running `next dev` locally.
+if (process.env.NODE_ENV === "development") {
+  import("@opennextjs/cloudflare").then(({ initOpenNextCloudflareForDev }) =>
+    initOpenNextCloudflareForDev()
+  );
+}

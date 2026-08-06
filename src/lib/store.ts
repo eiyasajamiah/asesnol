@@ -1,4 +1,4 @@
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import crypto from 'crypto';
 
 export type User = {
@@ -25,9 +25,9 @@ export type DepositRequest = {
   processedAt?: string;
 };
 
-function getKV() {
+async function getKV() {
   try {
-    const { env } = getRequestContext();
+    const { env } = await getCloudflareContext({ async: true });
     return (env as any).ASESNOL_KV as KVNamespace;
   } catch {
     return null;
@@ -35,27 +35,27 @@ function getKV() {
 }
 
 async function readUsers(): Promise<User[]> {
-  const kv = getKV();
+  const kv = await getKV();
   if (!kv) return [];
   const data = await kv.get('users');
   return data ? JSON.parse(data) : [];
 }
 
 async function writeUsers(users: User[]) {
-  const kv = getKV();
+  const kv = await getKV();
   if (!kv) return;
   await kv.put('users', JSON.stringify(users));
 }
 
 async function readDeposits(): Promise<DepositRequest[]> {
-  const kv = getKV();
+  const kv = await getKV();
   if (!kv) return [];
   const data = await kv.get('deposits');
   return data ? JSON.parse(data) : [];
 }
 
 async function writeDeposits(deposits: DepositRequest[]) {
-  const kv = getKV();
+  const kv = await getKV();
   if (!kv) return;
   await kv.put('deposits', JSON.stringify(deposits));
 }
