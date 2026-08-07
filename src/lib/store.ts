@@ -27,39 +27,37 @@ export type DepositRequest = {
   processedAt?: string;
 };
 
+// Cache KV instance per request to avoid repeated getCloudflareContext calls
+let _kv: any = null;
+
 async function getKV() {
+  if (_kv) return _kv;
   try {
     const { env } = await getCloudflareContext({ async: true });
-    return (env as any).ASESNOL_KV as KVNamespace;
+    _kv = (env as any).ASESNOL_KV;
+    return _kv;
   } catch {
     return null;
   }
 }
 
-async function readUsers(): Promise<User[]> {
+async function getJSON<T>(key: string): Promise<T | null> {
   const kv = await getKV();
-  if (!kv) return [];
-  const data = await kv.get('users');
-  return data ? JSON.parse(data) : [];
+  if (!kv) return null;
+  const data = await kv.get(key);
+  return data ? (JSON.parse(data) as T) : null;
 }
 
-async function writeUsers(users: User[]) {
+async function putJSON(key: string, value: unknown) {
   const kv = await getKV();
   if (!kv) return;
-  await kv.put('users', JSON.stringify(users));
+  await kv.put(key, JSON.stringify(value));
 }
 
-async function readDeposits(): Promise<DepositRequest[]> {
-  const kv = await getKV();
-  if (!kv) return [];
-  const data = await kv.get('deposits');
-  return data ? JSON.parse(data) : [];
-}
-
-async function writeDeposits(deposits: DepositRequest[]) {
-  const kv = await getKV();
-  if (!kv) return;
-  await kv.put('deposits', JSON.stringify(deposits));
+async function appendToIndex(key: string, id: string) {
+  const list = (await getJSON<string[]>(key)) || [];
+  list.push(id);
+  await putJSON(key, list);
 }
 
 export function hashPassword(password: string): string {
@@ -81,36 +79,54 @@ export function isWithinEarlyBirdPeriod(createdAt: string): boolean {
   return daysDiff <= 30;
 }
 
+async function getUserByEmail(email: string): Promise<User | null> {
+  const id = await getJSON<string>(`email_idx:${email.toLowerCase()}`);
+  if (!id) return null;
+  return getJSON<User>(`user:${id}`);
+}
+
+async function getUserByReferralCode(code: string): Promise<User | null> {
+  const id = await getJSON<string>(`referral_idx:${code.toUpperCase()}`);
+  if (!id) return null;
+  return getJSON<User>(`user:${id}`);
+}
+
+async function saveUser(user: User) {
+  await putJSON(`user:${user.id}`, user);
+}
+
+async function getUserCount(): Promise<number> {
+  const ids = (await getJSON<string[]>('user_ids')) || [];
+  return ids.length;
+}
+
 export async function createUser(data: {
   email: string;
   name: string;
   password: string;
   referralCodeUsed?: string;
 }): Promise<{ user: User } | { error: string }> {
-  const users = await readUsers();
+  const email = data.email.toLowerCase();
 
-  if (users.find((u) => u.email.toLowerCase() === data.email.toLowerCase())) {
+  if (await getUserByEmail(email)) {
     return { error: 'Email already registered' };
   }
 
-  let referredBy: string | null = null;
+  let referrer: User | null = null;
   if (data.referralCodeUsed) {
-    const referrer = users.find(
-      (u) => u.referralCode.toUpperCase() === data.referralCodeUsed!.toUpperCase()
-    );
+    referrer = await getUserByReferralCode(data.referralCodeUsed);
     if (!referrer) return { error: 'Invalid referral code' };
-    referredBy = referrer.id;
   }
 
-  const isEarlyBird = users.length < 50;
+  const isEarlyBird = (await getUserCount()) < 50;
 
   const user: User = {
     id: crypto.randomUUID(),
-    email: data.email.toLowerCase(),
+    email,
     name: data.name,
     passwordHash: hashPassword(data.password),
     referralCode: generateReferralCode(),
-    referredBy,
+    referredBy: referrer ? referrer.id : null,
     balance: 0,
     totalProfit: 0,
     totalDeposited: 0,
@@ -119,14 +135,16 @@ export async function createUser(data: {
     referrals: [],
   };
 
-  users.push(user);
+  await saveUser(user);
+  await putJSON(`email_idx:${email}`, user.id);
+  await putJSON(`referral_idx:${user.referralCode}`, user.id);
+  await appendToIndex('user_ids', user.id);
 
-  if (referredBy) {
-    const referrer = users.find((u) => u.id === referredBy);
-    if (referrer) referrer.referrals.push(user.id);
+  if (referrer) {
+    referrer.referrals.push(user.id);
+    await saveUser(referrer);
   }
 
-  await writeUsers(users);
   return { user };
 }
 
@@ -134,8 +152,7 @@ export async function authenticateUser(
   email: string,
   password: string
 ): Promise<{ user: User } | { error: string }> {
-  const users = await readUsers();
-  const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+  const user = await getUserByEmail(email);
   if (!user || user.passwordHash !== hashPassword(password)) {
     return { error: 'Invalid email or password' };
   }
@@ -143,8 +160,7 @@ export async function authenticateUser(
 }
 
 export async function getUserById(id: string): Promise<User | null> {
-  const users = await readUsers();
-  return users.find((u) => u.id === id) || null;
+  return getJSON<User>(`user:${id}`);
 }
 
 export async function getUserPublicStats(user: User) {
@@ -175,78 +191,93 @@ export async function createDepositRequest(
   network: string
 ): Promise<DepositRequest | { error: string }> {
   if (amount < 50) return { error: 'Minimum deposit is $50' };
-  if (!txHash || txHash.trim().length < 6) return { error: 'Invalid transaction hash' };
+  const cleanHash = txHash.trim();
+  if (!cleanHash || cleanHash.length < 6) return { error: 'Invalid transaction hash' };
 
-  const deposits = await readDeposits();
-
-  const duplicate = deposits.find(
-    (d) => d.txHash.toLowerCase() === txHash.trim().toLowerCase()
-  );
-  if (duplicate) return { error: 'This transaction hash was already submitted' };
+  const hashKey = `txhash_idx:${cleanHash.toLowerCase()}`;
+  if (await getJSON<string>(hashKey)) {
+    return { error: 'This transaction hash was already submitted' };
+  }
 
   const req: DepositRequest = {
     id: crypto.randomUUID(),
     userId,
     amount,
-    txHash: txHash.trim(),
+    txHash: cleanHash,
     network,
     status: 'pending',
     createdAt: new Date().toISOString(),
   };
-  deposits.push(req);
-  await writeDeposits(deposits);
+
+  await putJSON(`deposit:${req.id}`, req);
+  await putJSON(hashKey, req.id);
+  await appendToIndex(`user_deposits:${userId}`, req.id);
+  await appendToIndex('deposit_ids', req.id);
+
   return req;
 }
 
 export async function getUserDeposits(userId: string): Promise<DepositRequest[]> {
-  const deposits = await readDeposits();
+  const ids = (await getJSON<string[]>(`user_deposits:${userId}`)) || [];
+  const deposits = await Promise.all(ids.map((id) => getJSON<DepositRequest>(`deposit:${id}`)));
   return deposits
-    .filter((d) => d.userId === userId)
+    .filter((d): d is DepositRequest => d !== null)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function approveDeposit(depositId: string): Promise<{ ok: boolean; error?: string }> {
-  const deposits = await readDeposits();
-  const deposit = deposits.find((d) => d.id === depositId);
+  const deposit = await getJSON<DepositRequest>(`deposit:${depositId}`);
   if (!deposit || deposit.status !== 'pending') {
     return { ok: false, error: 'Deposit not found or already processed' };
   }
 
   deposit.status = 'approved';
   deposit.processedAt = new Date().toISOString();
-  await writeDeposits(deposits);
+  await putJSON(`deposit:${depositId}`, deposit);
 
-  const users = await readUsers();
-  const user = users.find((u) => u.id === deposit.userId);
+  const user = await getUserById(deposit.userId);
   if (user) {
     user.balance += deposit.amount;
     user.totalDeposited += deposit.amount;
-    await writeUsers(users);
+    await saveUser(user);
   }
 
   return { ok: true };
 }
 
 export async function rejectDeposit(depositId: string): Promise<{ ok: boolean; error?: string }> {
-  const deposits = await readDeposits();
-  const deposit = deposits.find((d) => d.id === depositId);
+  const deposit = await getJSON<DepositRequest>(`deposit:${depositId}`);
   if (!deposit || deposit.status !== 'pending') {
     return { ok: false, error: 'Deposit not found or already processed' };
   }
   deposit.status = 'rejected';
   deposit.processedAt = new Date().toISOString();
-  await writeDeposits(deposits);
+  await putJSON(`deposit:${depositId}`, deposit);
   return { ok: true };
 }
 
+// Optimized: use kv.list() with prefix instead of fetching each key manually
 export async function getAllDeposits(): Promise<DepositRequest[]> {
-  const deposits = await readDeposits();
-  return deposits.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  const kv = await getKV();
+  if (!kv) return [];
+  const list = await kv.list({ prefix: 'deposit:' });
+  const deposits = await Promise.all(
+    list.keys.map((k) => getJSON<DepositRequest>(k.name))
   );
+  return deposits
+    .filter((d): d is DepositRequest => d !== null)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
+// Optimized: use kv.list() with prefix instead of fetching each key manually
 export async function getAllUsersPublic() {
-  const users = await readUsers();
-  return Promise.all(users.map((u) => getUserPublicStats(u)));
+  const kv = await getKV();
+  if (!kv) return [];
+  const list = await kv.list({ prefix: 'user:' });
+  const users = await Promise.all(
+    list.keys.map((k) => getJSON<User>(k.name))
+  );
+  return Promise.all(
+    users.filter((u): u is User => u !== null).map((u) => getUserPublicStats(u))
+  );
 }
