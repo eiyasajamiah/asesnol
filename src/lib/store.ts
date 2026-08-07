@@ -20,6 +20,8 @@ export type DepositRequest = {
   id: string;
   userId: string;
   amount: number;
+  txHash: string;
+  network: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   processedAt?: string;
@@ -168,15 +170,26 @@ export async function getUserPublicStats(user: User) {
 
 export async function createDepositRequest(
   userId: string,
-  amount: number
+  amount: number,
+  txHash: string,
+  network: string
 ): Promise<DepositRequest | { error: string }> {
   if (amount < 50) return { error: 'Minimum deposit is $50' };
+  if (!txHash || txHash.trim().length < 6) return { error: 'Invalid transaction hash' };
 
   const deposits = await readDeposits();
+
+  const duplicate = deposits.find(
+    (d) => d.txHash.toLowerCase() === txHash.trim().toLowerCase()
+  );
+  if (duplicate) return { error: 'This transaction hash was already submitted' };
+
   const req: DepositRequest = {
     id: crypto.randomUUID(),
     userId,
     amount,
+    txHash: txHash.trim(),
+    network,
     status: 'pending',
     createdAt: new Date().toISOString(),
   };

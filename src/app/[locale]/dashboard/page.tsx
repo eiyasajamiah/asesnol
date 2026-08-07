@@ -3,6 +3,7 @@
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useState, useEffect, useCallback } from 'react';
+import { DEPOSIT_NETWORKS } from '@/lib/wallet-config';
 import {
   Wallet,
   TrendingUp,
@@ -32,6 +33,8 @@ type UserStats = {
 type Deposit = {
   id: string;
   amount: number;
+  txHash: string;
+  network: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   processedAt?: string;
@@ -47,9 +50,12 @@ export default function DashboardPage() {
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [loading, setLoading] = useState(true);
   const [depositAmount, setDepositAmount] = useState('');
+  const [selectedNetwork, setSelectedNetwork] = useState(DEPOSIT_NETWORKS[0]?.id || '');
+  const [txHash, setTxHash] = useState('');
   const [depositLoading, setDepositLoading] = useState(false);
   const [depositMsg, setDepositMsg] = useState('');
   const [copied, setCopied] = useState(false);
+  const [addressCopied, setAddressCopied] = useState(false);
   const [error, setError] = useState('');
 
   const fetchUser = useCallback(async () => {
@@ -92,12 +98,20 @@ export default function DashboardPage() {
       setError(t('minDeposit'));
       return;
     }
+    if (!txHash.trim()) {
+      setError(
+        locale === 'ar'
+          ? 'الرجاء إدخال رقم العملية (Transaction Hash) بعد إرسال التحويل'
+          : 'Please enter the transaction hash after sending the transfer'
+      );
+      return;
+    }
     setDepositLoading(true);
     try {
       const res = await fetch('/api/wallet/deposit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount }),
+        body: JSON.stringify({ amount, txHash: txHash.trim(), network: selectedNetwork }),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
@@ -107,12 +121,21 @@ export default function DashboardPage() {
       }
       setDepositMsg(t('depositPending'));
       setDepositAmount('');
+      setTxHash('');
       fetchDeposits();
     } catch {
       setError('Error');
     } finally {
       setDepositLoading(false);
     }
+  }
+
+  function copyAddress() {
+    const net = DEPOSIT_NETWORKS.find((n) => n.id === selectedNetwork);
+    if (!net) return;
+    navigator.clipboard.writeText(net.address);
+    setAddressCopied(true);
+    setTimeout(() => setAddressCopied(false), 2000);
   }
 
   async function handleLogout() {
@@ -272,6 +295,51 @@ export default function DashboardPage() {
                 {depositMsg}
               </div>
             )}
+
+            <div>
+              <label className="block text-sm text-slate-400 mb-1.5">
+                {locale === 'ar' ? 'الشبكة' : 'Network'}
+              </label>
+              <select
+                value={selectedNetwork}
+                onChange={(e) => setSelectedNetwork(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500"
+              >
+                {DEPOSIT_NETWORKS.map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm text-slate-400 mb-1.5">
+                {locale === 'ar' ? 'عنوان محفظة الإيداع' : 'Deposit wallet address'}
+              </label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 px-3 py-2.5 rounded-xl bg-slate-800 text-emerald-400 font-mono text-xs break-all">
+                  {DEPOSIT_NETWORKS.find((n) => n.id === selectedNetwork)?.address}
+                </code>
+                <button
+                  type="button"
+                  onClick={copyAddress}
+                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0 transition-colors"
+                >
+                  {addressCopied ? (
+                    <Check className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-amber-400/80 mt-1.5">
+                {locale === 'ar'
+                  ? 'أرسل فقط عبر هذه الشبكة بالتحديد. أي تحويل بشبكة مختلفة قد يُفقد.'
+                  : 'Only send using this exact network. Transfers on a different network may be lost.'}
+              </p>
+            </div>
+
             <div>
               <label className="block text-sm text-slate-400 mb-1.5">{t('depositAmount')}</label>
               <input
@@ -285,6 +353,25 @@ export default function DashboardPage() {
               />
               <p className="text-xs text-slate-500 mt-1">{t('minDeposit')}</p>
             </div>
+
+            <div>
+              <label className="block text-sm text-slate-400 mb-1.5">
+                {locale === 'ar' ? 'رقم العملية (Transaction Hash)' : 'Transaction Hash (TXID)'}
+              </label>
+              <input
+                type="text"
+                value={txHash}
+                onChange={(e) => setTxHash(e.target.value)}
+                placeholder={locale === 'ar' ? 'الصق رقم العملية بعد الإرسال' : 'Paste the TX hash after sending'}
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:border-emerald-500"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                {locale === 'ar'
+                  ? 'نستخدم رقم العملية للتحقق من تحويلك وربطه بحسابك — أرسل التحويل أولاً ثم الصق رقم العملية هنا.'
+                  : 'We use the transaction hash to verify your transfer and match it to your account — send the transfer first, then paste the hash here.'}
+              </p>
+            </div>
+
             <button
               type="submit"
               disabled={depositLoading}
@@ -308,27 +395,47 @@ export default function DashboardPage() {
                 <tr className="text-slate-400 border-b border-slate-800">
                   <th className="text-start py-3 px-2 font-medium">#</th>
                   <th className="text-start py-3 px-2 font-medium">USD</th>
+                  <th className="text-start py-3 px-2 font-medium">TXID</th>
                   <th className="text-start py-3 px-2 font-medium">Status</th>
                   <th className="text-start py-3 px-2 font-medium">Date</th>
                 </tr>
               </thead>
               <tbody>
-                {deposits.map((d, i) => (
-                  <tr key={d.id} className="border-b border-slate-800/50">
-                    <td className="py-3 px-2 text-slate-500">{i + 1}</td>
-                    <td className="py-3 px-2 text-white font-medium">
-                      ${d.amount.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-2">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs ${statusColor(d.status)}`}>
-                        {statusLabel(d.status)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-2 text-slate-400">
-                      {new Date(d.createdAt).toLocaleDateString(locale === 'ar' ? 'ar' : 'en')}
-                    </td>
-                  </tr>
-                ))}
+                {deposits.map((d, i) => {
+                  const net = DEPOSIT_NETWORKS.find((n) => n.id === d.network);
+                  return (
+                    <tr key={d.id} className="border-b border-slate-800/50">
+                      <td className="py-3 px-2 text-slate-500">{i + 1}</td>
+                      <td className="py-3 px-2 text-white font-medium">
+                        ${d.amount.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-2">
+                        {net ? (
+                          <a
+                            href={net.explorerTxUrl(d.txHash)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sky-400 hover:underline font-mono text-xs"
+                          >
+                            {d.txHash.slice(0, 8)}...{d.txHash.slice(-6)}
+                          </a>
+                        ) : (
+                          <span className="font-mono text-xs text-slate-400">
+                            {d.txHash.slice(0, 8)}...{d.txHash.slice(-6)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-2">
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs ${statusColor(d.status)}`}>
+                          {statusLabel(d.status)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 text-slate-400">
+                        {new Date(d.createdAt).toLocaleDateString(locale === 'ar' ? 'ar' : 'en')}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

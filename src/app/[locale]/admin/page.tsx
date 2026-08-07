@@ -2,6 +2,7 @@
 
 import { useTranslations, useLocale } from 'next-intl';
 import { useState, useEffect, useCallback } from 'react';
+import { DEPOSIT_NETWORKS } from '@/lib/wallet-config';
 import {
   Shield,
   Check,
@@ -16,6 +17,8 @@ type Deposit = {
   id: string;
   userId: string;
   amount: number;
+  txHash: string;
+  network: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   processedAt?: string;
@@ -295,61 +298,83 @@ export default function AdminPage() {
                 <thead>
                   <tr className="text-slate-400 border-b border-slate-800 bg-slate-900/50">
                     <th className="text-start py-3 px-4 font-medium">Amount</th>
-                    <th className="text-start py-3 px-4 font-medium">User ID</th>
+                    <th className="text-start py-3 px-4 font-medium">User</th>
+                    <th className="text-start py-3 px-4 font-medium">TXID</th>
                     <th className="text-start py-3 px-4 font-medium">Status</th>
                     <th className="text-start py-3 px-4 font-medium">Date</th>
                     <th className="text-start py-3 px-4 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {deposits.map((d) => (
-                    <tr key={d.id} className="border-b border-slate-800/50 hover:bg-slate-800/30">
-                      <td className="py-3 px-4 text-white font-semibold">
-                        ${d.amount.toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4 text-slate-400 font-mono text-xs">
-                        {d.userId.slice(0, 8)}…
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs ${
-                            d.status === 'pending'
-                              ? 'text-amber-400 bg-amber-500/10'
-                              : d.status === 'approved'
-                                ? 'text-emerald-400 bg-emerald-500/10'
-                                : 'text-red-400 bg-red-500/10'
-                          }`}
-                        >
-                          {d.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-400">
-                        {new Date(d.createdAt).toLocaleString(locale === 'ar' ? 'ar' : 'en')}
-                      </td>
-                      <td className="py-3 px-4">
-                        {d.status === 'pending' && (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleAction(d.id, 'approve')}
-                              disabled={actionLoading === d.id}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 text-xs font-medium hover:bg-emerald-500/25 disabled:opacity-50"
+                  {deposits.map((d) => {
+                    const net = DEPOSIT_NETWORKS.find((n) => n.id === d.network);
+                    return (
+                      <tr key={d.id} className="border-b border-slate-800/50 hover:bg-slate-800/30">
+                        <td className="py-3 px-4 text-white font-semibold">
+                          ${d.amount.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-slate-300 text-xs">
+                          {userName(d.userId)}
+                        </td>
+                        <td className="py-3 px-4">
+                          {net ? (
+                            <a
+                              href={net.explorerTxUrl(d.txHash)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sky-400 hover:underline font-mono text-xs"
+                              title={d.txHash}
                             >
-                              <Check className="w-3.5 h-3.5" />
-                              {locale === 'ar' ? 'موافقة' : 'Approve'}
-                            </button>
-                            <button
-                              onClick={() => handleAction(d.id, 'reject')}
-                              disabled={actionLoading === d.id}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 text-xs font-medium hover:bg-red-500/25 disabled:opacity-50"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                              {locale === 'ar' ? 'رفض' : 'Reject'}
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                              {d.txHash.slice(0, 10)}…{d.txHash.slice(-6)}
+                            </a>
+                          ) : (
+                            <span className="font-mono text-xs text-slate-400" title={d.txHash}>
+                              {d.txHash.slice(0, 10)}…{d.txHash.slice(-6)}
+                            </span>
+                          )}
+                          <div className="text-[10px] text-slate-500 mt-0.5">{net?.label || d.network}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-xs ${
+                              d.status === 'pending'
+                                ? 'text-amber-400 bg-amber-500/10'
+                                : d.status === 'approved'
+                                  ? 'text-emerald-400 bg-emerald-500/10'
+                                  : 'text-red-400 bg-red-500/10'
+                            }`}
+                          >
+                            {d.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-400">
+                          {new Date(d.createdAt).toLocaleString(locale === 'ar' ? 'ar' : 'en')}
+                        </td>
+                        <td className="py-3 px-4">
+                          {d.status === 'pending' && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleAction(d.id, 'approve')}
+                                disabled={actionLoading === d.id}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 text-xs font-medium hover:bg-emerald-500/25 disabled:opacity-50"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                {locale === 'ar' ? 'موافقة' : 'Approve'}
+                              </button>
+                              <button
+                                onClick={() => handleAction(d.id, 'reject')}
+                                disabled={actionLoading === d.id}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 text-xs font-medium hover:bg-red-500/25 disabled:opacity-50"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                {locale === 'ar' ? 'رفض' : 'Reject'}
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
