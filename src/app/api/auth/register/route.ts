@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createUser, getUserPublicStats } from '@/lib/store';
-import { createSession } from '@/lib/session';
+import { getPrisma } from '@/lib/prisma';
+import { hashPassword, generateReferralCode, createSession } from '@/lib/auth';
+
+const EARLY_BIRD_USER_LIMIT = 50;
+const EARLY_BIRD_DISCOUNT_PERCENT = 20;
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,21 +22,67 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
     }
 
-    const result = await createUser({
-      email,
-      name,
-      password,
-      referralCodeUsed: referralCode || undefined,
-    });
+    const prisma = await getPrisma();
+    const normalizedEmail = email.toLowerCase().trim();
 
-    if ('error' in result) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (existing) {
+      return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
     }
 
-    await createSession(result.user.id);
-    const stats = await getUserPublicStats(result.user);
+    let referrer = null;
+    if (referralCode) {
+      referrer = await prisma.user.findUnique({ where: { referralCode: referralCode.toUpperCase() } });
+      if (!referrer) {
+        return NextResponse.json({ error: 'Invalid referral code' }, { status: 400 });
+      }
+    }
 
-    return NextResponse.json({ user: stats });
+    // كود إحالة فريد (نادراً جداً ما يتكرر، لكن نتأكد بأي حال)
+    let code = generateReferralCode();
+    while (await prisma.user.findUnique({ where: { referralCode: code } })) {
+      code = generateReferralCode();
+    }
+
+    const userCount = await prisma.user.count();
+    const isEarlyBird = userCount < EARLY_BIRD_USER_LIMIT;
+
+    const passwordHash = await hashPassword(password);
+
+    const user = await prisma.user.create({
+      data: {
+        email: normalizedEmail,
+        name,
+        passwordHash,
+        referralCode: code,
+        referredBy: referrer?.id ?? null,
+        isEarlyBird,
+        settings: { create: {} },
+      },
+    });
+
+    if (referrer) {
+      await prisma.referral.create({
+        data: {
+          referrerId: referrer.id,
+          referredId: user.id,
+          status: 'PENDING', // يصير ACTIVE ويُحتسب العمولة عند أول اشتراك مدفوع
+        },
+      });
+    }
+
+    await createSession(user.id);
+
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        referralCode: user.referralCode,
+        isEarlyBird,
+        earlyBirdDiscountPercent: isEarlyBird ? EARLY_BIRD_DISCOUNT_PERCENT : 0,
+      },
+    });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

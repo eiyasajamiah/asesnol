@@ -1,99 +1,172 @@
-# Asesnol — Automated Trading Platform Website
 
-Next.js website with bilingual support (Arabic / English), user registration, internal wallet, referral system, and profit-share calculation.
+# 🚀 Asesnol — AI-Powered Trading Platform
 
-## Features
+منصة SaaS لترخيص بوت تداول آلي (EA) — اشتراك شهري لاستخدام البوت على حسابك الخاص، مع نظام إحالات بعمولة ثابتة ومعلنة.
 
-- **Bilingual** (AR / EN) via next-intl
-- **Registration & Login** with secure session cookies
-- **Referral system**: base 50% profit share + 20% per successful referral (max 100%)
-- **Early bird**: first 50 users get 100% share for 30 days
-- **Internal wallet**: deposit requests (manual approval by admin)
-- **Demo performance** page with clear Demo labels
-- **Risk disclaimer** pages
+## ✨ المميزات
 
-## Quick Start
+| الميزة | الوصف |
+|--------|-------|
+| 🤖 **AI Trading** | خوارزميات ذكية للتداول الآلي |
+| 💰 **نظام إحالات** | عمولة ثابتة ومعلنة (20%) لكل مشترك تحيله |
+| 🔑 **ترخيص/SaaS** | اشتراك شهري لاستخدام البوت على حسابك الخاص لدى بروكرك |
+| 💳 **بوابات دفع** | Stripe + USDT TRC20 |
+| 🌐 **ثنائي اللغة** | عربي/إنجليزي |
+| 📊 **لوحة تحكم** | إحصائيات ورسوم بيانية |
+| 🤖 **مساعد AI** | Grok API + قاعدة معرفة مخصصة |
+| 🛡️ **أمان قصوى** | Rate limiting + CSP + HSTS |
 
+## 🛠️ التقنيات
+
+- **Frontend**: Next.js 14 + TypeScript + Tailwind CSS
+- **UI**: shadcn/ui + Framer Motion + Lucide Icons
+- **i18n**: next-intl
+- **Database**: PostgreSQL (Supabase) + Prisma ORM
+- **Auth**: JWT + bcrypt + httpOnly cookies
+- **Payments**: Stripe + Crypto (USDT TRC20)
+- **AI**: Grok API (xAI) + RAG
+- **Hosting**: Cloudflare Pages
+- **Analytics**: Cloudflare Analytics + Google Analytics 4
+
+## 📁 هيكل المشروع
+
+```
+asesnol-website/
+├── app/
+│   ├── [locale]/
+│   │   ├── page.tsx              # الصفحة الرئيسية
+│   │   ├── about/page.tsx        # من نحن
+│   │   ├── faq/page.tsx          # الأسئلة الشائعة
+│   │   ├── how-it-works/page.tsx # كيف يعمل
+│   │   ├── pricing/page.tsx      # الأسعار
+│   │   ├── chat/page.tsx         # مساعد AI
+│   │   ├── terms/page.tsx        # شروط الاستخدام
+│   │   ├── privacy/page.tsx      # سياسة الخصوصية
+│   │   ├── risk-disclaimer/      # إخلاء المسؤولية
+│   │   └── dashboard/
+│   │       ├── page.tsx          # النظرة العامة
+│   │       ├── subscription/page.tsx  # الاشتراك
+│   │       ├── referrals/page.tsx # الإحالات
+│   │       └── settings/page.tsx # الإعدادات
+│   ├── api/
+│   │   ├── auth/
+│   │   │   ├── register/route.ts
+│   │   │   └── login/route.ts
+│   │   ├── dashboard/route.ts
+│   │   ├── subscription/
+│   │   │   └── status/route.ts
+│   │   ├── referrals/route.ts
+│   │   ├── payment/
+│   │   │   ├── stripe/
+│   │   │   │   ├── create/route.ts
+│   │   │   │   └── webhook/route.ts
+│   │   │   └── crypto/
+│   │   │       ├── create/route.ts
+│   │   │       └── verify/route.ts
+│   │   ├── ai/chat/route.ts
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── robots.ts
+│   └── sitemap.ts
+├── components/
+│   ├── Navbar.tsx
+│   ├── Footer.tsx
+│   ├── HeroSection.tsx
+│   ├── FeaturesSection.tsx
+│   ├── PricingSection.tsx
+│   ├── dashboard/
+│   │   ├── Sidebar.tsx
+│   │   ├── StatsCard.tsx
+│   │   ├── ProfitChart.tsx
+│   │   ├── ReferralChart.tsx
+│   │   └── RecentTransactions.tsx
+│   ├── payment/
+│   │   ├── StripeCheckout.tsx
+│   │   └── CryptoDeposit.tsx
+│   └── ai/
+│       ├── ChatMessage.tsx
+│       ├── ChatWidget.tsx
+│       └── ChatButton.tsx
+├── lib/
+│   ├── prisma.ts
+│   ├── auth.ts
+│   ├── stripe.ts
+│   ├── crypto.ts
+│   ├── security/
+│   │   └── rate-limit.ts
+│   └── ai/
+│       ├── knowledge-base.ts
+│       └── prompts.ts
+├── prisma/
+│   └── schema.prisma
+├── messages/
+│   ├── ar.json
+│   └── en.json
+├── public/
+│   └── images/
+├── middleware.ts
+├── next.config.js
+├── wrangler.toml
+├── package.json
+└── .env.local
+```
+
+## 🚀 النشر على Cloudflare
+
+### 1. تثبيت التبعيات
 ```bash
-cd asesnol-website
 npm install
-npm run dev
 ```
 
-Open:
-- Arabic: http://localhost:3000/ar
-- English: http://localhost:3000/en
-
-## Environment (optional)
-
-Create `.env.local`:
-
-```
-SESSION_SECRET=your-long-random-secret
-ADMIN_SECRET=your-admin-key
-```
-
-## Admin: Approve Deposits
-
-List pending deposits:
-
+### 2. إعداد البيئة
 ```bash
-curl -H "x-admin-key: your-admin-key" http://localhost:3000/api/admin/deposits
+cp .env.local.example .env.local
+# عدل المتغيرات
 ```
 
-Approve a deposit:
-
+### 3. قاعدة البيانات
 ```bash
-curl -X POST -H "x-admin-key: your-admin-key" -H "Content-Type: application/json" \
-  -d '{"depositId":"UUID-HERE","action":"approve"}' \
-  http://localhost:3000/api/admin/deposits
+npx prisma migrate dev --name init
+npx prisma generate
 ```
 
-Default admin key (dev only): `asesnol-admin-change-me`
+### 4. البناء والنشر
+```bash
+npm run build
+wrangler pages deploy .next --branch=main
+```
 
-## Data Storage
+## 🔐 متغيرات البيئة
 
-User and deposit data are stored as JSON files in `/data` (gitignored):
-- data/users.json
-- data/deposits.json
+```env
+# App
+NEXT_PUBLIC_APP_URL=https://asesnol.com
 
-For production, migrate to PostgreSQL / Supabase.
+# Database
+DATABASE_URL=postgresql://...
 
-## Profit Share Logic
+# Auth
+SESSION_SECRET=your-secret-key
 
-| Referrals | Investor Share |
-|-----------|----------------|
-| 0         | 50%            |
-| 1         | 70%            |
-| 2         | 90%            |
-| 3+        | 100%           |
+# Admin
+ADMIN_SECRET=your-admin-secret
 
-Early bird (first 50 users, within 30 days of signup): 100% regardless of referrals.
+# Stripe
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
 
-## Next Steps
+# AI
+XAI_API_KEY=your-xai-api-key
 
-1. Add How-it-works / Pricing / FAQ pages
-2. AI chat agent (Grok API)
-3. Real payment gateway or crypto deposits
-4. Admin dashboard UI
-5. Connect live MT5 results
-6. Deploy on Vercel + custom domain (asesnol.com / asesnol.ai)
+# Crypto
+CRYPTO_API_KEY=your-crypto-api-key
+```
 
+## 📄 التراخيص
 
-## Admin Panel (UI)
+© 2026 Asesnol. جميع الحقوق محفوظة.
 
-Open: http://localhost:3000/ar/admin
+---
 
-Default key: `asesnol-admin-change-me`
-
-Features:
-- View & approve/reject deposit requests
-- View all registered users, balances, referral counts
-
-## AI Chat Agent
-
-Open: http://localhost:3000/ar/chat
-
-- Works offline with a built-in knowledge base (FAQ)
-- To enable Grok: set `XAI_API_KEY` in `.env.local` and restart
-- Get API key: https://console.x.ai
+**Built with ❤️ by Eiyas Ajamiah**

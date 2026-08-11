@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateUser, getUserPublicStats } from '@/lib/store';
-import { createSession } from '@/lib/session';
+import { getPrisma } from '@/lib/prisma';
+import { verifyPassword, createSession } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,15 +11,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing email or password' }, { status: 400 });
     }
 
-    const result = await authenticateUser(email, password);
-    if ('error' in result) {
-      return NextResponse.json({ error: result.error }, { status: 401 });
+    const prisma = await getPrisma();
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+    });
+
+    if (!user || !(await verifyPassword(password, user.passwordHash))) {
+      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
-    await createSession(result.user.id);
-    const stats = await getUserPublicStats(result.user);
+    if (user.status !== 'ACTIVE') {
+      return NextResponse.json({ error: 'This account is suspended' }, { status: 403 });
+    }
 
-    return NextResponse.json({ user: stats });
+    await createSession(user.id);
+
+    return NextResponse.json({
+      user: { id: user.id, email: user.email, name: user.name },
+    });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

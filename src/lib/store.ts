@@ -262,7 +262,7 @@ export async function getAllDeposits(): Promise<DepositRequest[]> {
   if (!kv) return [];
   const list = await kv.list({ prefix: 'deposit:' });
   const deposits = await Promise.all(
-    list.keys.map((k) => getJSON<DepositRequest>(k.name))
+    list.keys.map((k: { name: string }) => getJSON<DepositRequest>(k.name))
   );
   return deposits
     .filter((d): d is DepositRequest => d !== null)
@@ -275,7 +275,7 @@ export async function getAllUsersPublic() {
   if (!kv) return [];
   const list = await kv.list({ prefix: 'user:' });
   const users = await Promise.all(
-    list.keys.map((k) => getJSON<User>(k.name))
+    list.keys.map((k: { name: string }) => getJSON<User>(k.name))
   );
   return Promise.all(
     users.filter((u): u is User => u !== null).map((u) => getUserPublicStats(u))
