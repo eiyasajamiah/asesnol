@@ -1,23 +1,22 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "asesnol",
-	"main": ".open-next/worker.js",
-	"compatibility_date": "2026-08-06",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	"assets": {
-		"directory": ".open-next/assets",
-		"binding": "ASSETS"
-	},
-	"kv_namespaces": [
-		{
-			"binding": "ASESNOL_KV",
-			"id": "9843630fe2fc4172b9aeda3eeef4d91a",
-			"remote": true
-		}
-	],
-	"observability": {
-		"enabled": true
-	}
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "asesnol",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-08-06",
+  "compatibility_flags": ["nodejs_compat"],
+  "minify": true,
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "ASESNOL_KV",
+      "id": "9843630fe2fc4172b9aeda3eeef4d91a",
+      "remote": true
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
 }

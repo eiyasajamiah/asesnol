@@ -1,11 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { PrismaNeon } from '@prisma/adapter-neon';
+import { withAccelerate } from '@prisma/extension-accelerate';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-
-// Cloudflare Workers لا يدعم اتصال TCP التقليدي لـ Postgres، لذلك نستخدم
-// Neon serverless driver (HTTP/WebSocket) عبر Prisma Driver Adapter بدل
-// عميل Prisma القياسي. هذا يسمح لنا بالبقاء على نفس بنية النشر الحالية
-// (Cloudflare Workers + OpenNext) بدون الحاجة لـ Prisma Accelerate المدفوع.
 
 let cached: PrismaClient | null = null;
 
@@ -14,13 +9,12 @@ export async function getPrisma(): Promise<PrismaClient> {
 
   let connectionString = process.env.DATABASE_URL;
 
-  // في بيئة Cloudflare Workers، متغيرات البيئة تُقرأ عبر getCloudflareContext
-  // بدل process.env مباشرة.
+  // في بيئة Cloudflare Workers، نقرأ المتغيرات عبر getCloudflareContext
   try {
     const { env } = await getCloudflareContext({ async: true });
     connectionString = (env as any).DATABASE_URL || connectionString;
   } catch {
-    // نتجاهل الخطأ عند التشغيل خارج بيئة Workers (مثل أثناء البناء المحلي)
+    // نتجاهل الخطأ عند التشغيل خارج Workers (البناء المحلي)
   }
 
   if (!connectionString) {
@@ -29,7 +23,11 @@ export async function getPrisma(): Promise<PrismaClient> {
     );
   }
 
-  const adapter = new PrismaNeon({ connectionString });
-  cached = new PrismaClient({ adapter });
+  // ✅ مع Prisma Accelerate، لا نحتاج Neon adapter
+  // Accelerate يتعامل مع الاتصال HTTP مباشرة
+  cached = new PrismaClient({
+    datasourceUrl: connectionString,
+  }).$extends(withAccelerate());
+
   return cached;
 }
