@@ -66,9 +66,7 @@ model Subscription {
   status               SubscriptionStatus @default(PENDING)
   billingCycle         BillingCycle       @default(MONTHLY)
   licenseKey           String?            @unique
-  stripeSubscriptionId String?            @unique
-  stripeCustomerId     String?
-  paymentMethod        PaymentMethod      @default(STRIPE)
+  paymentMethod        PaymentMethod      @default(CRYPTO)
   startDate            DateTime?
   endDate              DateTime?
   cancelledAt          DateTime?
@@ -77,6 +75,7 @@ model Subscription {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan Plan @relation(fields: [planId], references: [id])
+  transactions Transaction[]
 
   @@index([userId])
   @@index([status])
@@ -88,17 +87,18 @@ model Subscription {
 model Transaction {
   id           String            @id @default(uuid())
   userId       String
+  subscriptionId String?
   type         TransactionType
   amount       Decimal           @db.Decimal(10, 2)
   currency     String            @default("USD")
   description  String?
   status       TransactionStatus @default(COMPLETED)
-  txHash       String?           @unique // للدفع بالكريبتو (USDT TRC20)
+  txHash       String?           @unique // رقم عملية الكريبتو (Transaction Hash)
   network      String?
-  stripePaymentId String?        @unique
   createdAt    DateTime          @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
 
   @@index([userId])
   @@index([txHash])
@@ -161,7 +161,6 @@ enum BillingCycle {
 }
 
 enum PaymentMethod {
-  STRIPE
   CRYPTO
 }
 

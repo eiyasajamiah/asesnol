@@ -50,7 +50,7 @@ export default function DashboardPage() {
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [loading, setLoading] = useState(true);
   const [depositAmount, setDepositAmount] = useState('');
-  const [selectedNetwork, setSelectedNetwork] = useState(DEPOSIT_NETWORKS[0]?.id || '');
+  const [selectedNetwork, setSelectedNetwork] = useState<string>(DEPOSIT_NETWORKS[0]?.id || '');
   const [txHash, setTxHash] = useState('');
   const [depositLoading, setDepositLoading] = useState(false);
   const [depositMsg, setDepositMsg] = useState('');
