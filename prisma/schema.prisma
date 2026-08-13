@@ -9,12 +9,10 @@
 
 generator client {
   provider = "prisma-client-js"
-  // ❌ احذف previewFeatures — صارت deprecated
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {

@@ -1,9 +1,7 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
-import { PrismaNeon } from '@prisma/adapter-neon';
 
-const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! });
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
 
 async function main() {
   const plans = [
@@ -12,7 +10,7 @@ async function main() {
       name: 'Basic',
       description: 'مثالية للبدء بحساب تداول واحد.',
       priceMonthly: 49,
-      priceYearly: 470, // شهرين مجانًا تقريبًا عند الدفع السنوي
+      priceYearly: 470,
       sortOrder: 1,
       features: [
         'ترخيص لاستخدام البوت على حساب تداول واحد',
@@ -40,7 +38,7 @@ async function main() {
       slug: 'lifetime',
       name: 'Lifetime',
       description: 'ادفع مرة واحدة، استخدم البوت للأبد.',
-      priceMonthly: 999, // يُستخدم كسعر الدفعة الواحدة (billingCycle = LIFETIME)
+      priceMonthly: 999,
       priceYearly: null,
       sortOrder: 3,
       features: [

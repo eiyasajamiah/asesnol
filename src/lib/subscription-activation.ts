@@ -1,5 +1,6 @@
 import { getPrisma } from './prisma';
 import { generateLicenseKey } from './auth';
+import type { Subscription, Plan, Transaction } from '@prisma/client';
 
 const REFERRAL_COMMISSION_PERCENT = 20;
 
@@ -16,6 +17,16 @@ function addBillingPeriod(from: Date, cycle: string): Date | null {
   return null; // LIFETIME: بدون تاريخ انتهاء
 }
 
+// الأنواع الممتدة مع العلاقات
+type SubscriptionWithPlanAndTransactions = Subscription & {
+  plan: Plan;
+  transactions: Transaction[];
+};
+
+type SubscriptionWithTransactions = Subscription & {
+  transactions: Transaction[];
+};
+
 /**
  * يفعّل اشتراكاً معلّقاً: يولّد مفتاح ترخيص، يضبط تواريخ البداية/النهاية،
  * يعلّم المعاملة المالية كمكتملة، ويحتسب عمولة الإحالة (20% ثابتة) لو
@@ -24,10 +35,11 @@ function addBillingPeriod(from: Date, cycle: string): Date | null {
 export async function activateSubscription(subscriptionId: string) {
   const prisma = await getPrisma();
 
-  const subscription = await prisma.subscription.findUnique({
+  const subscription = (await prisma.subscription.findUnique({
     where: { id: subscriptionId },
     include: { plan: true, transactions: { where: { status: 'PENDING' }, take: 1 } },
-  });
+  })) as SubscriptionWithPlanAndTransactions | null;
+
   if (!subscription || subscription.status !== 'PENDING') {
     return { ok: false, error: 'Subscription not found or already processed' };
   }
@@ -78,10 +90,11 @@ export async function activateSubscription(subscriptionId: string) {
 export async function rejectSubscription(subscriptionId: string) {
   const prisma = await getPrisma();
 
-  const subscription = await prisma.subscription.findUnique({
+  const subscription = (await prisma.subscription.findUnique({
     where: { id: subscriptionId },
     include: { transactions: { where: { status: 'PENDING' }, take: 1 } },
-  });
+  })) as SubscriptionWithTransactions | null;
+
   if (!subscription || subscription.status !== 'PENDING') {
     return { ok: false, error: 'Subscription not found or already processed' };
   }

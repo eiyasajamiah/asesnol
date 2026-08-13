@@ -4,11 +4,13 @@ import {
   destroySession as destroyJwtSession,
   verifySession,
 } from './auth';
+import type { User, Subscription, Plan, UserSettings } from '@prisma/client';
 
-// طبقة توافق فوق نظام الجلسات الجديد (JWT عبر jose في auth.ts)، تُبقي
-// نفس أسماء الدوال المستخدمة بباقي المشروع (createSession, destroySession,
-// getSessionUser) لتقليل عدد الملفات اللي تحتاج تعديل، لكن getSessionUser
-// الآن يرجّع مستخدم Prisma (مع اشتراكه النشط) بدل مستخدم KV القديم.
+// النوع الصحيح للمستخدم مع العلاقات المضمَّنة
+type UserWithRelations = User & {
+  subscriptions: (Subscription & { plan: Plan })[];
+  settings: UserSettings | null;
+};
 
 export const createSession = createJwtSession;
 export const destroySession = destroyJwtSession;
@@ -17,12 +19,12 @@ export async function getSessionUserId(): Promise<string | null> {
   return verifySession();
 }
 
-export async function getSessionUser() {
+export async function getSessionUser(): Promise<UserWithRelations | null> {
   const userId = await verifySession();
   if (!userId) return null;
 
   const prisma = await getPrisma();
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
       subscriptions: {
@@ -34,4 +36,6 @@ export async function getSessionUser() {
       settings: true,
     },
   });
+
+  return user as UserWithRelations | null;
 }
