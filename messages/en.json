@@ -1,0 +1,89 @@
+{
+  "Metadata": {
+    "title": "Asesnol | Automated Trading Bot License",
+    "description": "Automated trading bot on MetaTrader 5 — monthly license, crypto payment"
+  },
+  "Nav": {
+    "home": "Home",
+    "pricing": "Pricing",
+    "login": "Log in",
+    "register": "Sign up",
+    "dashboard": "Dashboard",
+    "admin": "Admin",
+    "logout": "Log out"
+  },
+  "Home": {
+    "badge": "Automated Trading • Monthly License",
+    "title": "An automated trading bot on",
+    "titleHighlight": "your own account",
+    "subtitle": "Subscribe monthly and run the Asesnol bot on your own MetaTrader 5 account. Your capital stays fully under your control — we sell the license only, we never handle your funds.",
+    "cta": "Get Started",
+    "ctaSecondary": "View Plans",
+    "f1Title": "24/7 Automated Bot",
+    "f1Desc": "Runs on your MT5 account without manual intervention.",
+    "f2Title": "Controllable Risk Settings",
+    "f2Desc": "You set the risk level on your own account.",
+    "f3Title": "Crypto-Only Payment",
+    "f3Desc": "USDT via TRC20 or BEP20, verified automatically on-chain.",
+    "f4Title": "Your Funds, Your Control",
+    "f4Desc": "We sell a software license only — we never accept trading deposits.",
+    "plansTitle": "Plans",
+    "plansSubtitle": "No hidden fees — pay with crypto and activate your license in minutes"
+  },
+  "Auth": {
+    "loginTitle": "Log In",
+    "registerTitle": "Create an Account",
+    "name": "Full name",
+    "email": "Email",
+    "password": "Password",
+    "referralCode": "Referral code (optional)",
+    "loginBtn": "Log in",
+    "registerBtn": "Create account",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "minPassword": "At least 6 characters"
+  },
+  "Dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome",
+    "noSubscription": "You don't have an active subscription yet",
+    "subscriptionActive": "Your subscription is active",
+    "plan": "Plan",
+    "expiresOn": "Expires on",
+    "lifetime": "Lifetime",
+    "licenseKey": "License key",
+    "downloadBot": "Download bot",
+    "referralCode": "Your referral code",
+    "copy": "Copy",
+    "copied": "Copied",
+    "subscribeNow": "Subscribe now",
+    "network": "Network",
+    "walletAddress": "Wallet address",
+    "txHash": "Transaction hash (TXID)",
+    "txHashPlaceholder": "Paste the TX hash after sending",
+    "submitPayment": "Submit payment proof",
+    "pendingReview": "Your request is under review — it will activate automatically once verified on-chain",
+    "activated": "Your subscription is now active!"
+  },
+  "Admin": {
+    "title": "Admin Panel",
+    "pendingSubscriptions": "Pending subscriptions",
+    "botReleases": "Bot releases",
+    "uploadBot": "Upload new release",
+    "approve": "Approve",
+    "reject": "Reject",
+    "noItems": "No items yet"
+  },
+  "Common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "monthly": "Monthly",
+    "yearly": "Yearly"
+  },
+  "BrokerPromo": {
+    "badge": "Recommended Broker",
+    "title": "Open a trading account with {broker}",
+    "subtitle": "You need a real MetaTrader 5 account to run the bot on — we recommend PU Prime as a trusted broker, and opening your account through our link supports the platform at no extra cost to you.",
+    "cta": "Open Account"
+  }
+}

@@ -1,0 +1,46 @@
+@import "tailwindcss";
+@import "@fontsource/ibm-plex-sans-arabic/400.css";
+@import "@fontsource/ibm-plex-sans-arabic/600.css";
+@import "@fontsource/ibm-plex-sans-arabic/700.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+/* هوية Asesnol البصرية — طرفية تداول ليلية بلمسة ذهب */
+:root {
+  --bg: #0b0d10;
+  --panel: #14181d;
+  --panel-raised: #1a1f26;
+  --border: #262c34;
+  --gold: #d4a24e;
+  --gold-bright: #f0b94d;
+  --text: #e8e6e1;
+  --text-muted: #8b8f94;
+  --text-faint: #5a5f66;
+  --up: #4ade80;
+  --down: #f87171;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-raised: var(--panel-raised);
+  --color-border: var(--border);
+  --color-gold: var(--gold);
+  --color-gold-bright: var(--gold-bright);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --font-display: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-mono-data: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.tabular {
+  font-family: var(--font-mono-data);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
