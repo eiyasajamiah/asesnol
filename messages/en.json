@@ -63,7 +63,11 @@
     "txHashPlaceholder": "Paste the TX hash after sending",
     "submitPayment": "Submit payment proof",
     "pendingReview": "Your request is under review — it will activate automatically once verified on-chain",
-    "activated": "Your subscription is now active!"
+    "activated": "Your subscription is now active!",
+    "billingCycle": "Billing cycle",
+    "lifetimeNotice": "The Lifetime plan is a one-time payment and never expires.",
+    "senderAddress": "Your sending wallet address",
+    "senderAddressPlaceholder": "Paste the wallet address you sent the payment from"
   },
   "Admin": {
     "title": "Admin Panel",
@@ -72,7 +76,8 @@
     "uploadBot": "Upload new release",
     "approve": "Approve",
     "reject": "Reject",
-    "noItems": "No items yet"
+    "noItems": "No items yet",
+    "senderAddress": "Sender wallet"
   },
   "Common": {
     "loading": "Loading...",

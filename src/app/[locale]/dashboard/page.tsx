@@ -7,7 +7,7 @@ import { DEPOSIT_NETWORKS } from '@/lib/wallet-config';
 import { Copy, Check, Download, LogOut } from 'lucide-react';
 import BrokerPromo from '@/components/BrokerPromo';
 
-type Plan = { id: string; slug: string; name: string; priceMonthly: string };
+type Plan = { id: string; slug: string; name: string; priceMonthly: string; priceYearly: string | null };
 type Me = {
   id: string;
   name: string;
@@ -35,7 +35,9 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
 
   const [selectedPlan, setSelectedPlan] = useState('');
+  const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY' | 'LIFETIME'>('MONTHLY');
   const [selectedNetwork, setSelectedNetwork] = useState<string>(DEPOSIT_NETWORKS[0]?.id || '');
+  const [senderAddress, setSenderAddress] = useState('');
   const [txHash, setTxHash] = useState('');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -63,6 +65,21 @@ export default function DashboardPage() {
       });
   }, [fetchMe]);
 
+  const selectedPlanObj = plans.find((p) => p.slug === selectedPlan);
+
+  // خطة Lifetime دفعة واحدة دائماً — نمنع اختيار MONTHLY/YEARLY لها،
+  // لأن هذا كان يسبب تسجيلها خطأً كاشتراك شهري (endDate بعد شهر بدل
+  // "بلا انتهاء").
+  useEffect(() => {
+    if (!selectedPlanObj) return;
+    if (selectedPlanObj.slug === 'lifetime') {
+      setBillingCycle('LIFETIME');
+    } else if (billingCycle === 'LIFETIME') {
+      setBillingCycle('MONTHLY');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPlanObj?.slug]);
+
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/');
@@ -80,7 +97,7 @@ export default function DashboardPage() {
     e.preventDefault();
     setError('');
     setMessage('');
-    if (!txHash.trim()) return;
+    if (!txHash.trim() || !senderAddress.trim()) return;
     setSubmitLoading(true);
     try {
       const res = await fetch('/api/subscription/purchase', {
@@ -88,9 +105,10 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           planSlug: selectedPlan,
-          billingCycle: 'MONTHLY',
+          billingCycle,
           txHash: txHash.trim(),
           network: selectedNetwork,
+          senderAddress: senderAddress.trim(),
         }),
       });
       const data = (await res.json()) as { error?: string; autoVerified?: boolean };
@@ -192,9 +210,39 @@ export default function DashboardPage() {
                 ))}
               </select>
             </div>
+            {selectedPlanObj && selectedPlanObj.slug !== 'lifetime' && (
+              <div>
+                <label className="block text-sm text-text-muted mb-1.5">{t('billingCycle')}</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setBillingCycle('MONTHLY')}
+                    className={`py-2.5 rounded-lg border text-sm font-medium transition-colors ${billingCycle === 'MONTHLY' ? 'border-gold bg-gold/10 text-gold' : 'border-border text-text-muted'}`}
+                  >
+                    {tc('monthly')} — ${selectedPlanObj.priceMonthly}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!selectedPlanObj.priceYearly}
+                    onClick={() => selectedPlanObj.priceYearly && setBillingCycle('YEARLY')}
+                    className={`py-2.5 rounded-lg border text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${billingCycle === 'YEARLY' ? 'border-gold bg-gold/10 text-gold' : 'border-border text-text-muted'}`}
+                  >
+                    {tc('yearly')} — ${selectedPlanObj.priceYearly ?? '—'}
+                  </button>
+                </div>
+              </div>
+            )}
+            {selectedPlanObj?.slug === 'lifetime' && (
+              <p className="text-xs text-text-faint">{t('lifetimeNotice')}</p>
+            )}
             <div>
               <label className="block text-sm text-text-muted mb-1.5">{t('walletAddress')}</label>
               <code className="block px-3 py-2.5 rounded-lg bg-panel-raised text-gold tabular text-xs break-all">{network?.address}</code>
+            </div>
+            <div>
+              <label className="block text-sm text-text-muted mb-1.5">{t('senderAddress')}</label>
+              <input value={senderAddress} onChange={(e) => setSenderAddress(e.target.value)} placeholder={t('senderAddressPlaceholder')}
+                className="w-full px-3 py-2.5 rounded-lg bg-panel-raised border border-border text-text text-sm" required />
             </div>
             <div>
               <label className="block text-sm text-text-muted mb-1.5">{t('txHash')}</label>

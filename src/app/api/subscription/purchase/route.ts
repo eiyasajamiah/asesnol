@@ -13,9 +13,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = (await req.json()) as {
-      planSlug?: string; billingCycle?: 'MONTHLY' | 'YEARLY' | 'LIFETIME'; txHash?: string; network?: string;
+      planSlug?: string; billingCycle?: 'MONTHLY' | 'YEARLY' | 'LIFETIME'; txHash?: string; network?: string; senderAddress?: string;
     };
-    const { planSlug, billingCycle, txHash, network } = body;
+    const { planSlug, billingCycle, txHash, network, senderAddress } = body;
 
     if (!planSlug || !billingCycle) {
       return NextResponse.json({ error: 'Missing plan or billing cycle' }, { status: 400 });
@@ -26,6 +26,10 @@ export async function POST(req: NextRequest) {
     }
     if (!network || !getNetworkById(network)) {
       return NextResponse.json({ error: 'Invalid network' }, { status: 400 });
+    }
+    const cleanSender = (senderAddress || '').trim();
+    if (!cleanSender || cleanSender.length < 8) {
+      return NextResponse.json({ error: 'Sender wallet address is required' }, { status: 400 });
     }
 
     const prisma = await getPrisma();
@@ -61,11 +65,12 @@ export async function POST(req: NextRequest) {
     await prisma.transaction.create({
       data: {
         userId: user.id, subscriptionId: subscription.id, type: 'SUBSCRIPTION_PURCHASE',
-        amount, status: 'PENDING', txHash: cleanHash, network, description: `${plan.name} — ${billingCycle}`,
+        amount, status: 'PENDING', txHash: cleanHash, network, senderAddress: cleanSender,
+        description: `${plan.name} — ${billingCycle}`,
       },
     });
 
-    const verification = await verifyCryptoPayment(network, cleanHash, amount);
+    const verification = await verifyCryptoPayment(network, cleanHash, amount, cleanSender);
     if (verification.verified) {
       await activateSubscription(subscription.id);
       return NextResponse.json({ subscription: { id: subscription.id, status: 'ACTIVE' }, autoVerified: true });
@@ -76,8 +81,11 @@ export async function POST(req: NextRequest) {
       autoVerified: false,
       note: 'Your payment will be manually reviewed shortly.',
     });
-  } catch (e) {
+  } catch (e: unknown) {
     console.error(e);
+    if (typeof e === 'object' && e !== null && 'code' in e && (e as { code?: string }).code === 'P2002') {
+      return NextResponse.json({ error: 'This transaction hash was already submitted' }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

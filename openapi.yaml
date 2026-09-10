@@ -1,0 +1,173 @@
+openapi: 3.0.0
+info:
+  title: Asesnol API
+  version: 1.0.0
+  description: API for managing trading bots and accessing trading data
+
+servers:
+  - url: https://api.asesnol.com/v1
+
+paths:
+  /bots:
+    get:
+      summary: List all bots
+      security:
+        - ApiKeyAuth: []
+      responses:
+        200:
+          description: List of bots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Bot'
+    
+    post:
+      summary: Create a new bot
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BotCreate'
+      responses:
+        201:
+          description: Bot created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bot'
+
+  /bots/{id}/start:
+    post:
+      summary: Start a bot
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Bot started
+
+  /trades:
+    get:
+      summary: Get trade history
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: botId
+          in: query
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        200:
+          description: Trade history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trades:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Trade'
+                  total:
+                    type: integer
+                  hasMore:
+                    type: boolean
+
+  /ws/trades:
+    get:
+      summary: WebSocket for real-time trade updates
+      description: |
+        Connect to wss://api.asesnol.com/v1/ws/trades?apiKey=YOUR_KEY
+        Messages:
+        - {"type": "trade", "data": {...}}
+        - {"type": "bot_status", "data": {...}}
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    Bot:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        strategy:
+          type: string
+        status:
+          type: string
+          enum: [RUNNING, STOPPED, ERROR]
+        createdAt:
+          type: string
+          format: date-time
+
+    BotCreate:
+      type: object
+      required: [name, strategy]
+      properties:
+        name:
+          type: string
+        strategy:
+          type: string
+        parameters:
+          type: object
+
+    Trade:
+      type: object
+      properties:
+        id:
+          type: string
+        botId:
+          type: string
+        symbol:
+          type: string
+        type:
+          type: string
+          enum: [BUY, SELL]
+        entryPrice:
+          type: number
+        exitPrice:
+          type: number
+        profit:
+          type: number
+        openedAt:
+          type: string
+          format: date-time
+        closedAt:
+          type: string
+          format: date-time

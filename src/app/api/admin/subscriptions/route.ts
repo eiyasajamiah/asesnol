@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/prisma';
 import { activateSubscription, rejectSubscription } from '@/lib/subscription-activation';
-
-const ADMIN_SECRET = process.env.ADMIN_SECRET || 'asesnol-admin-change-me';
-
-function checkAdmin(req: NextRequest): boolean {
-  const key = req.headers.get('x-admin-key') || req.nextUrl.searchParams.get('key');
-  return key === ADMIN_SECRET;
-}
+import { checkAdmin } from '@/lib/admin-auth';
 
 export async function GET(req: NextRequest) {
-  if (!checkAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await checkAdmin(req))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const prisma = await getPrisma();
   const subscriptions = await prisma.subscription.findMany({
@@ -27,7 +21,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await checkAdmin(req))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const body = (await req.json()) as { subscriptionId?: string; action?: 'approve' | 'reject' };

@@ -1,23 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/prisma';
 import { uploadBotFile, deleteBotFile } from '@/lib/bot-storage';
-
-const ADMIN_SECRET = process.env.ADMIN_SECRET || 'asesnol-admin-change-me';
-
-function checkAdmin(req: NextRequest): boolean {
-  const key = req.headers.get('x-admin-key') || req.nextUrl.searchParams.get('key');
-  return key === ADMIN_SECRET;
-}
+import { checkAdmin } from '@/lib/admin-auth';
 
 export async function GET(req: NextRequest) {
-  if (!checkAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await checkAdmin(req))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const prisma = await getPrisma();
   const bots = await prisma.botRelease.findMany({ orderBy: { createdAt: 'desc' } });
   return NextResponse.json({ bots });
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await checkAdmin(req))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const formData = await req.formData();
@@ -51,7 +45,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  if (!checkAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await checkAdmin(req))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const body = (await req.json()) as { botId?: string };

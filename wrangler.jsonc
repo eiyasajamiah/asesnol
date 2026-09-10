@@ -16,6 +16,12 @@
       "remote": true
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "BOT_FILES",
+      "bucket_name": "asesnol-bot-files"
+    }
+  ],
   "observability": {
     "enabled": true
   }

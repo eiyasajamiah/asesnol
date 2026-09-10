@@ -8,7 +8,7 @@ type Sub = {
   id: string; billingCycle: string;
   user: { name: string; email: string };
   plan: { name: string };
-  transactions: { amount: string; txHash: string; network: string }[];
+  transactions: { amount: string; txHash: string; network: string; senderAddress: string | null }[];
 };
 type Bot = { id: string; version: string; title: string; fileName: string; fileSizeKb: number; isActive: boolean };
 
@@ -21,9 +21,10 @@ export default function AdminPage() {
   const [uploadMsg, setUploadMsg] = useState('');
 
   const load = useCallback(async (adminKey: string) => {
+    const headers = { 'x-admin-key': adminKey };
     const [subsRes, botsRes] = await Promise.all([
-      fetch(`/api/admin/subscriptions?key=${adminKey}`),
-      fetch(`/api/admin/bots?key=${adminKey}`),
+      fetch('/api/admin/subscriptions', { headers }),
+      fetch('/api/admin/bots', { headers }),
     ]);
     if (subsRes.ok) setSubs(((await subsRes.json()) as { subscriptions?: Sub[] }).subscriptions || []);
     if (botsRes.ok) setBots(((await botsRes.json()) as { bots?: Bot[] }).bots || []);
@@ -46,9 +47,9 @@ export default function AdminPage() {
   }
 
   async function handleAction(subscriptionId: string, action: 'approve' | 'reject') {
-    await fetch(`/api/admin/subscriptions?key=${key}`, {
+    await fetch('/api/admin/subscriptions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
       body: JSON.stringify({ subscriptionId, action }),
     });
     load(key);
@@ -58,7 +59,7 @@ export default function AdminPage() {
     e.preventDefault();
     setUploadMsg('');
     const form = new FormData(e.currentTarget);
-    const res = await fetch(`/api/admin/bots?key=${key}`, { method: 'POST', body: form });
+    const res = await fetch('/api/admin/bots', { method: 'POST', headers: { 'x-admin-key': key }, body: form });
     const data = (await res.json()) as { error?: string };
     if (!res.ok) {
       setUploadMsg(data.error || 'Error');
@@ -70,9 +71,9 @@ export default function AdminPage() {
   }
 
   async function handleDeleteBot(botId: string) {
-    await fetch(`/api/admin/bots?key=${key}`, {
+    await fetch('/api/admin/bots', {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
       body: JSON.stringify({ botId }),
     });
     load(key);
@@ -107,9 +108,24 @@ export default function AdminPage() {
                   <div className="text-text font-medium">{s.user.name} — {s.plan.name}</div>
                   <div className="text-text-muted text-xs mt-1">{s.user.email}</div>
                   {s.transactions[0] && (
-                    <a href={`https://tronscan.org/#/transaction/${s.transactions[0].txHash}`} target="_blank" className="tabular text-xs text-gold hover:underline">
-                      ${s.transactions[0].amount} · {s.transactions[0].txHash.slice(0, 10)}...
-                    </a>
+                    <>
+                      <a
+                        href={
+                          s.transactions[0].network === 'usdt-bep20'
+                            ? `https://bscscan.com/tx/${s.transactions[0].txHash}`
+                            : `https://tronscan.org/#/transaction/${s.transactions[0].txHash}`
+                        }
+                        target="_blank"
+                        className="tabular text-xs text-gold hover:underline block"
+                      >
+                        ${s.transactions[0].amount} · {s.transactions[0].txHash.slice(0, 10)}...
+                      </a>
+                      {s.transactions[0].senderAddress && (
+                        <div className="text-text-faint text-xs tabular mt-0.5">
+                          {t('senderAddress')}: {s.transactions[0].senderAddress}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
                 <div className="flex gap-2 shrink-0">

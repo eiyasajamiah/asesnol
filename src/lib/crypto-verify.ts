@@ -10,7 +10,7 @@ const AMOUNT_TOLERANCE = 0.01;
 const BSC_CHAIN_ID = 56;
 const ETHERSCAN_API_BASE = 'https://api.etherscan.io/v2/api';
 
-async function verifyTrc20(txHash: string, expectedAmount: number): Promise<VerificationResult> {
+async function verifyTrc20(txHash: string, expectedAmount: number, expectedSender: string): Promise<VerificationResult> {
   const network = getNetworkById('usdt-trc20')!;
   const apiKey = process.env.TRONGRID_API_KEY;
 
@@ -32,6 +32,14 @@ async function verifyTrc20(txHash: string, expectedAmount: number): Promise<Veri
       (e) => e.event_name === 'Transfer' && e.contract_address.toLowerCase() === network.usdtContract.toLowerCase()
     );
     if (!transferEvent) return { verified: false, reason: 'No matching USDT transfer event found' };
+
+    // نتأكد إن المُرسِل هو نفس العنوان اللي أدخله المستخدم عند الشراء —
+    // بدون هذا الفحص، أي شخص يلقط رقم معاملة عام من مستكشف البلوكشين
+    // (لأن معاملات USDT عامة وقابلة للعرض من الجميع) ويقدّمه هو كإثبات
+    // دفعه هو، ويسرق اشتراك المستخدم الحقيقي.
+    if (transferEvent.result.from.toLowerCase() !== expectedSender.toLowerCase()) {
+      return { verified: false, reason: 'Sender address does not match the address you provided' };
+    }
 
     const infoRes = await fetch('https://api.trongrid.io/wallet/gettransactioninfobyid', {
       method: 'POST',
@@ -60,7 +68,7 @@ async function verifyTrc20(txHash: string, expectedAmount: number): Promise<Veri
   }
 }
 
-async function verifyBep20(txHash: string, expectedAmount: number): Promise<VerificationResult> {
+async function verifyBep20(txHash: string, expectedAmount: number, expectedSender: string): Promise<VerificationResult> {
   const network = getNetworkById('usdt-bep20')!;
   const apiKey = process.env.ETHERSCAN_API_KEY;
   if (!apiKey) return { verified: false, reason: 'ETHERSCAN_API_KEY is not configured' };
@@ -80,14 +88,16 @@ async function verifyBep20(txHash: string, expectedAmount: number): Promise<Veri
 
     const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
     const walletTopic = '0x' + network.address.slice(2).toLowerCase().padStart(64, '0');
+    const senderTopic = '0x' + expectedSender.replace(/^0x/, '').toLowerCase().padStart(64, '0');
 
     const transferLog = receipt.logs.find(
       (l) =>
         l.address.toLowerCase() === network.usdtContract.toLowerCase() &&
         l.topics[0]?.toLowerCase() === TRANSFER_TOPIC &&
+        l.topics[1]?.toLowerCase() === senderTopic &&
         l.topics[2]?.toLowerCase() === walletTopic
     );
-    if (!transferLog) return { verified: false, reason: 'No matching USDT transfer to our wallet found' };
+    if (!transferLog) return { verified: false, reason: 'No matching USDT transfer from your address to our wallet found' };
 
     const blockRes = await fetch(url({ module: 'proxy', action: 'eth_blockNumber' }));
     const blockData = (await blockRes.json()) as { result?: string };
@@ -112,9 +122,13 @@ async function verifyBep20(txHash: string, expectedAmount: number): Promise<Veri
 export async function verifyCryptoPayment(
   networkId: string,
   txHash: string,
-  expectedAmount: number
+  expectedAmount: number,
+  expectedSender: string
 ): Promise<VerificationResult> {
-  if (networkId === 'usdt-trc20') return verifyTrc20(txHash, expectedAmount);
-  if (networkId === 'usdt-bep20') return verifyBep20(txHash, expectedAmount);
+  if (!expectedSender || expectedSender.trim().length < 8) {
+    return { verified: false, reason: 'Sender wallet address is required' };
+  }
+  if (networkId === 'usdt-trc20') return verifyTrc20(txHash, expectedAmount, expectedSender.trim());
+  if (networkId === 'usdt-bep20') return verifyBep20(txHash, expectedAmount, expectedSender.trim());
   return { verified: false, reason: 'Unsupported network' };
 }

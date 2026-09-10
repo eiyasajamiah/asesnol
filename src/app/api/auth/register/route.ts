@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/prisma';
 import { hashPassword, generateReferralCode, createSession } from '@/lib/auth';
+import { isRateLimited } from '@/lib/rate-limit';
 
 const EARLY_BIRD_USER_LIMIT = 50;
 
 export async function POST(req: NextRequest) {
   try {
+    if (await isRateLimited(req, 'register', 5, 60 * 60)) {
+      return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
+    }
+
     const body = (await req.json()) as { email?: string; name?: string; password?: string; referralCode?: string };
     const { email, name, password, referralCode } = body;
 

@@ -63,7 +63,11 @@
     "txHashPlaceholder": "الصق رقم العملية بعد الإرسال",
     "submitPayment": "إرسال إثبات الدفع",
     "pendingReview": "طلبك قيد المراجعة، سيتم التفعيل تلقائياً بعد التحقق من البلوكشين",
-    "activated": "تم تفعيل اشتراكك بنجاح!"
+    "activated": "تم تفعيل اشتراكك بنجاح!",
+    "billingCycle": "دورة الفوترة",
+    "lifetimeNotice": "خطة Lifetime تُدفع مرة واحدة فقط ولا تنتهي.",
+    "senderAddress": "عنوان محفظتك المرسِلة",
+    "senderAddressPlaceholder": "الصق عنوان محفظتك التي أرسلت منها الدفعة"
   },
   "Admin": {
     "title": "لوحة الإدارة",
@@ -72,7 +76,8 @@
     "uploadBot": "رفع نسخة جديدة",
     "approve": "موافقة",
     "reject": "رفض",
-    "noItems": "لا توجد عناصر حالياً"
+    "noItems": "لا توجد عناصر حالياً",
+    "senderAddress": "عنوان محفظة المُرسِل"
   },
   "Common": {
     "loading": "جاري التحميل...",

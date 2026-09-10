@@ -91,3 +91,24 @@ export async function rejectSubscription(subscriptionId: string) {
 
   return { ok: true };
 }
+
+// لا يوجد Cron ثابت هنا (Cloudflare Workers لا يشغّل مهام دورية بدون
+// إعداد Cron Trigger منفصل)، فنطبّق "انتهاء كسول" (lazy expiration):
+// كل مرة نقرأ فيها اشتراك المستخدم (تسجيل الدخول، تنزيل البوت...)، نتحقق
+// إن endDate ما فات، وإلا نحوّل الحالة لـ EXPIRED فوراً قبل استخدامها.
+// اشتراكات LIFETIME لها endDate = null فما تنتهي أبداً (سلوك مقصود).
+export async function expireIfPastDue(subscription: Subscription): Promise<Subscription> {
+  if (
+    subscription.status === 'ACTIVE' &&
+    subscription.endDate &&
+    subscription.endDate.getTime() < Date.now()
+  ) {
+    const prisma = await getPrisma();
+    const updated = await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: { status: 'EXPIRED' },
+    });
+    return updated;
+  }
+  return subscription;
+}
