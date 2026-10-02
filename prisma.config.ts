@@ -5,7 +5,7 @@
 //   DATABASE_URL        -> رابط Accelerate (prisma://...) يُستخدم وقت التشغيل بـ src/lib/prisma.ts
 
 import 'dotenv/config';
-import { defineConfig, env } from 'prisma/config';
+import { defineConfig } from 'prisma/config';
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
@@ -14,6 +14,8 @@ export default defineConfig({
     seed: 'tsx prisma/seed.ts',
   },
   datasource: {
-    url: env('DIRECT_DATABASE_URL'),
+    // `prisma generate` does not need a database connection, and Cloudflare's
+    // build environment may not have the direct URL configured.
+    url: process.env.DIRECT_DATABASE_URL ?? '',
   },
 });
