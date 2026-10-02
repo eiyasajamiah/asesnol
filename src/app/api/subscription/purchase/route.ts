@@ -20,6 +20,9 @@ export async function POST(req: NextRequest) {
     if (!planSlug || !billingCycle) {
       return NextResponse.json({ error: 'Missing plan or billing cycle' }, { status: 400 });
     }
+    if (!['MONTHLY', 'YEARLY', 'LIFETIME'].includes(billingCycle)) {
+      return NextResponse.json({ error: 'Invalid billing cycle' }, { status: 400 });
+    }
     const cleanHash = (txHash || '').trim();
     if (!cleanHash || cleanHash.length < 6) {
       return NextResponse.json({ error: 'Invalid transaction hash' }, { status: 400 });
@@ -59,14 +62,24 @@ export async function POST(req: NextRequest) {
     }
 
     const subscription = await prisma.subscription.create({
-      data: { userId: user.id, planId: plan.id, status: 'PENDING', billingCycle, paymentMethod: 'CRYPTO' },
-    });
-
-    await prisma.transaction.create({
       data: {
-        userId: user.id, subscriptionId: subscription.id, type: 'SUBSCRIPTION_PURCHASE',
-        amount, status: 'PENDING', txHash: cleanHash, network, senderAddress: cleanSender,
-        description: `${plan.name} — ${billingCycle}`,
+        userId: user.id,
+        planId: plan.id,
+        status: 'PENDING',
+        billingCycle,
+        paymentMethod: 'CRYPTO',
+        transactions: {
+          create: {
+            user: { connect: { id: user.id } },
+            type: 'SUBSCRIPTION_PURCHASE',
+            amount,
+            status: 'PENDING',
+            txHash: cleanHash,
+            network,
+            senderAddress: cleanSender,
+            description: `${plan.name} — ${billingCycle}`,
+          },
+        },
       },
     });
 

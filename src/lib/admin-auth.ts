@@ -20,7 +20,7 @@ export async function checkAdmin(req: NextRequest): Promise<boolean> {
 
   // نفضّل الهيدر (لا يُسجَّل بسهولة بسجلات الوصول مثل query string)،
   // لكن نبقي دعم query string كخيار احتياطي للتوافق العكسي فقط.
-  const key = req.headers.get('x-admin-key') || req.nextUrl.searchParams.get('key');
+  const key = req.headers.get('x-admin-key');
   if (!key) return false;
 
   // مقارنة بزمن ثابت لتقليل مخاطر هجمات القياس الزمني (timing attack)

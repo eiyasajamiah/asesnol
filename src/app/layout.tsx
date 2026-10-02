@@ -6,6 +6,18 @@ export const metadata: Metadata = {
   description: "Smart Automated Trading",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return children;
+export default async function RootLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale?: string }>;
+}) {
+  const { locale = 'ar' } = await params;
+
+  return (
+    <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} className="h-full antialiased">
+      <body className="min-h-full flex flex-col bg-bg text-text font-body">{children}</body>
+    </html>
+  );
 }

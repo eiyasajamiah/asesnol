@@ -1,4 +1,5 @@
 import { getNetworkById } from './wallet-config';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export type VerificationResult =
   | { verified: true; actualAmount: number }
@@ -10,9 +11,18 @@ const AMOUNT_TOLERANCE = 0.01;
 const BSC_CHAIN_ID = 56;
 const ETHERSCAN_API_BASE = 'https://api.etherscan.io/v2/api';
 
+async function getPaymentApiKey(name: 'TRONGRID_API_KEY' | 'ETHERSCAN_API_KEY'): Promise<string | undefined> {
+  try {
+    const { env } = await getCloudflareContext({ async: true });
+    return (env as any)[name] || process.env[name];
+  } catch {
+    return process.env[name];
+  }
+}
+
 async function verifyTrc20(txHash: string, expectedAmount: number, expectedSender: string): Promise<VerificationResult> {
   const network = getNetworkById('usdt-trc20')!;
-  const apiKey = process.env.TRONGRID_API_KEY;
+  const apiKey = await getPaymentApiKey('TRONGRID_API_KEY');
 
   try {
     const res = await fetch(`https://api.trongrid.io/v1/transactions/${txHash}/events`, {
@@ -29,18 +39,20 @@ async function verifyTrc20(txHash: string, expectedAmount: number, expectedSende
     };
 
     const transferEvent = data.data?.find(
-      (e) => e.event_name === 'Transfer' && e.contract_address.toLowerCase() === network.usdtContract.toLowerCase()
+      (e) =>
+        e.event_name === 'Transfer' &&
+        e.contract_address.toLowerCase() === network.usdtContract.toLowerCase() &&
+        e.result.from.toLowerCase() === expectedSender.toLowerCase() &&
+        e.result.to.toLowerCase() === network.address.toLowerCase()
     );
-    if (!transferEvent) return { verified: false, reason: 'No matching USDT transfer event found' };
+    if (!transferEvent) {
+      return { verified: false, reason: 'No matching USDT transfer to our wallet from your address found' };
+    }
 
     // نتأكد إن المُرسِل هو نفس العنوان اللي أدخله المستخدم عند الشراء —
     // بدون هذا الفحص، أي شخص يلقط رقم معاملة عام من مستكشف البلوكشين
     // (لأن معاملات USDT عامة وقابلة للعرض من الجميع) ويقدّمه هو كإثبات
     // دفعه هو، ويسرق اشتراك المستخدم الحقيقي.
-    if (transferEvent.result.from.toLowerCase() !== expectedSender.toLowerCase()) {
-      return { verified: false, reason: 'Sender address does not match the address you provided' };
-    }
-
     const infoRes = await fetch('https://api.trongrid.io/wallet/gettransactioninfobyid', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(apiKey ? { 'TRON-PRO-API-KEY': apiKey } : {}) },
@@ -70,7 +82,7 @@ async function verifyTrc20(txHash: string, expectedAmount: number, expectedSende
 
 async function verifyBep20(txHash: string, expectedAmount: number, expectedSender: string): Promise<VerificationResult> {
   const network = getNetworkById('usdt-bep20')!;
-  const apiKey = process.env.ETHERSCAN_API_KEY;
+  const apiKey = await getPaymentApiKey('ETHERSCAN_API_KEY');
   if (!apiKey) return { verified: false, reason: 'ETHERSCAN_API_KEY is not configured' };
 
   const url = (params: Record<string, string>) => {

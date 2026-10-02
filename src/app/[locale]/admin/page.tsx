@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { Check, X, Upload, Trash2, Lock } from 'lucide-react';
 
@@ -30,18 +30,8 @@ export default function AdminPage() {
     if (botsRes.ok) setBots(((await botsRes.json()) as { bots?: Bot[] }).bots || []);
   }, []);
 
-  useEffect(() => {
-    const saved = typeof window !== 'undefined' ? sessionStorage.getItem('adminKey') : null;
-    if (saved) {
-      setKey(saved);
-      setAuthed(true);
-      load(saved);
-    }
-  }, [load]);
-
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    sessionStorage.setItem('adminKey', key);
     setAuthed(true);
     load(key);
   }

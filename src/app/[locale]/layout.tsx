@@ -24,16 +24,10 @@ export default async function LocaleLayout({
 
   setRequestLocale(locale);
   const messages = await getMessages();
-  const isRtl = locale === 'ar';
-
   return (
-    <html lang={locale} dir={isRtl ? 'rtl' : 'ltr'} className="h-full antialiased">
-      <body className="min-h-full flex flex-col bg-bg text-text font-body">
-        <NextIntlClientProvider messages={messages}>
-          <Navbar />
-          {children}
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <NextIntlClientProvider messages={messages}>
+      <Navbar />
+      {children}
+    </NextIntlClientProvider>
   );
 }

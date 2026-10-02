@@ -25,10 +25,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const obj = await getBotFileStream(bot.fileKey);
   if (!obj) return NextResponse.json({ error: 'File not found in storage' }, { status: 404 });
 
-  return new NextResponse(obj.body as any, {
+  return new NextResponse(obj.body as unknown as BodyInit, {
     headers: {
       'Content-Type': obj.httpMetadata?.contentType || 'application/octet-stream',
-      'Content-Disposition': `attachment; filename="${bot.fileName}"`,
+      'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(bot.fileName)}`,
     },
   });
 }

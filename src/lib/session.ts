@@ -27,7 +27,7 @@ export async function getSessionUser(): Promise<UserWithRelations | null> {
     },
   })) as UserWithRelations | null;
 
-  if (!user) return null;
+  if (!user || user.status !== 'ACTIVE') return null;
 
   const sub = user.subscriptions[0];
   if (sub) {

@@ -1,43 +1,24 @@
-import type { KVNamespace } from '@cloudflare/workers-types';
+import type { R2Bucket, R2ObjectBody } from '@cloudflare/workers-types';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-// ⚠️ تخزين مؤقت عبر KV بدل R2 (لحين تفعيل وسيلة دفع تسمح باستخدام R2).
-// KV يدعم حتى 25MB لكل قيمة، وحد ملف البوت عندنا 20MB، فمناسب مؤقتًا.
-// للرجوع لـ R2 لاحقًا: استبدل هذا الملف بالنسخة اللي تستخدم R2Bucket،
-// وأضف قسم r2_buckets بدل/مع kv_namespaces بـ wrangler.jsonc.
-
-const KEY_PREFIX = 'botfile:';
-
-async function getKV() {
-  try {
-    const { env } = await getCloudflareContext({ async: true });
-    return (env as any).ASESNOL_KV as KVNamespace | undefined;
-  } catch {
-    return undefined;
-  }
+async function getBotBucket(): Promise<R2Bucket> {
+  const { env } = await getCloudflareContext({ async: true });
+  const bucket = (env as any).BOT_FILES as R2Bucket | undefined;
+  if (!bucket) throw new Error('R2 bucket (BOT_FILES) is not bound');
+  return bucket;
 }
 
 export async function uploadBotFile(key: string, file: ArrayBuffer, contentType: string) {
-  const kv = await getKV();
-  if (!kv) throw new Error('KV namespace (ASESNOL_KV) is not bound');
-  await kv.put(KEY_PREFIX + key, file, { metadata: { contentType } });
+  const bucket = await getBotBucket();
+  await bucket.put(key, file, { httpMetadata: { contentType } });
 }
 
-export async function getBotFileStream(
-  key: string
-): Promise<{ body: ArrayBuffer; httpMetadata?: { contentType?: string } } | null> {
-  const kv = await getKV();
-  if (!kv) throw new Error('KV namespace (ASESNOL_KV) is not bound');
-
-  const result = await kv.getWithMetadata(KEY_PREFIX + key, 'arrayBuffer');
-  if (!result || result.value === null) return null;
-
-  const metadata = result.metadata as { contentType?: string } | null;
-  return { body: result.value, httpMetadata: { contentType: metadata?.contentType } };
+export async function getBotFileStream(key: string): Promise<R2ObjectBody | null> {
+  const bucket = await getBotBucket();
+  return bucket.get(key);
 }
 
 export async function deleteBotFile(key: string) {
-  const kv = await getKV();
-  if (!kv) throw new Error('KV namespace (ASESNOL_KV) is not bound');
-  await kv.delete(KEY_PREFIX + key);
+  const bucket = await getBotBucket();
+  await bucket.delete(key);
 }

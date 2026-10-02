@@ -19,7 +19,7 @@ export async function isRateLimited(
     const kv = (env as any).ASESNOL_KV as KVNamespace | undefined;
     if (!kv) return false; // لو KV غير متاح (مثلاً بالتطوير المحلي)، لا نحظر أحداً
 
-    const ip = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || 'unknown';
+    const ip = req.headers.get('cf-connecting-ip') || 'unknown';
     const key = `ratelimit:${bucket}:${ip}`;
 
     const current = await kv.get(key);
