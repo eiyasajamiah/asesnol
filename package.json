@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build --webpack",
+    "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
     "cf:build": "opennextjs-cloudflare build",
@@ -51,5 +52,9 @@
     "prisma": {
       "mysql2": "^3.23.1"
     }
+  },
+  "allowScripts": {
+    "@prisma/engines": true,
+    "prisma": true
   }
 }
