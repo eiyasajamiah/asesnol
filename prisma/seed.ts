@@ -1,9 +1,9 @@
 import 'dotenv/config';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../src/generated/prisma/client';
 
 const prisma = new PrismaClient({
   accelerateUrl: process.env.DATABASE_URL!,
-} as any);
+});
 
 async function main() {
   const plans = [

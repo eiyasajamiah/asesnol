@@ -1,4 +1,4 @@
-import type { User, Subscription, Plan } from '@prisma/client';
+import type { User, Subscription, Plan } from '@/generated/prisma/client';
 import { getPrisma } from './prisma';
 import { verifySession } from './auth';
 import { expireIfPastDue } from './subscription-activation';

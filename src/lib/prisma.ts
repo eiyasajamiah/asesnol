@@ -1,9 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@/generated/prisma/client';
 import { withAccelerate } from '@prisma/extension-accelerate';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 const createPrismaClient = (accelerateUrl: string) =>
-  new PrismaClient({ accelerateUrl } as any).$extends(withAccelerate());
+  new PrismaClient({ accelerateUrl }).$extends(withAccelerate());
 
 type ExtendedPrismaClient = ReturnType<typeof createPrismaClient>;
 let cached: ExtendedPrismaClient | null = null;

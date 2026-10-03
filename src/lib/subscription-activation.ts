@@ -1,4 +1,4 @@
-import type { Subscription, Plan, Transaction } from '@prisma/client';
+import type { Subscription, Plan, Transaction } from '@/generated/prisma/client';
 import { getPrisma } from './prisma';
 import { generateLicenseKey } from './auth';
 
