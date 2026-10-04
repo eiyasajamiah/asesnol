@@ -12,8 +12,7 @@
   "kv_namespaces": [
     {
       "binding": "ASESNOL_KV",
-      "id": "9843630fe2fc4172b9aeda3eeef4d91a",
-      "remote": true
+      "id": "9843630fe2fc4172b9aeda3eeef4d91a"
     }
   ],
   "observability": {
