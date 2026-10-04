@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
-import { getBotFileStream } from '@/lib/bot-storage';
+import { getBotFile } from '@/lib/bot-storage';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
@@ -22,12 +22,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: 'Bot release not found' }, { status: 404 });
   }
 
-  const obj = await getBotFileStream(bot.fileKey);
+  const obj = await getBotFile(bot.fileKey);
   if (!obj) return NextResponse.json({ error: 'File not found in storage' }, { status: 404 });
 
-  return new NextResponse(obj.body as unknown as BodyInit, {
+  return new NextResponse(obj.body, {
     headers: {
-      'Content-Type': obj.httpMetadata?.contentType || 'application/octet-stream',
+      'Content-Type': obj.contentType,
+      'Content-Length': String(obj.body.byteLength),
       'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(bot.fileName)}`,
     },
   });
